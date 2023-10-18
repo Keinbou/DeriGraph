@@ -3,6 +3,8 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 import numpy as np
 import math
+from sympy import *
+from sympy import symbols
 
 
 class RoundedButton(tk.Canvas):
@@ -132,12 +134,21 @@ fig = Figure(figsize=(1, 1),
 equation = "i ** 2"
 i = np.arange(0, math.pi*2, 0.05)
 y = eval(equation)
+derivative = diff(equation)
+derivative = str(derivative)
+dy = eval(derivative)
 
-plot1 = fig.add_subplot(121)
+# plot1 = fig.add_subplot(121)
+# plot1.plot(i, y, color="g", label=equation)
+# plot1.legend()
+# plot2 = fig.add_subplot(122)
+# plot2.plot(i, dy, color="b", label=derivative)
+# plot2.legend()
+
+plot1 = fig.add_subplot(111)
 plot1.plot(i, y, color="g", label=equation)
+plot1.plot(i, dy, color="b", label=derivative)
 plot1.legend()
-plot2 = fig.add_subplot(122)
-plot2.plot(i, y)
 canvas = FigureCanvasTkAgg(fig,
                            master=right_frame)
 canvas.draw()
