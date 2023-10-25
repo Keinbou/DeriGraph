@@ -1,10 +1,18 @@
+import io
+import os
+import tkinter
 import tkinter as tk
+from tkinter import filedialog
+
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import math
 from sympy import *
 from sympy import symbols
+from PIL import Image
 
 
 class RoundedButton(tk.Canvas):
@@ -106,6 +114,124 @@ def func():
 def clicked(menu):
     menu.entryconfigure(1, label="Clicked!")
 
+#Функція для збереження графіку у PDF форматі
+def export_to_pdf(path, filename):
+    full_path = path + "/" + filename + ".pdf"
+    pdf_pages = PdfPages(full_path)
+
+    canvas = FigureCanvasAgg(fig)
+    canvas.draw()
+    pdf_pages.savefig(fig)
+    pdf_pages.close()
+
+#Функція для збереження графіку у PNG форматі
+def export_to_png(path, filename):
+    full_path = path + "/" + filename + ".png"
+    canvas = FigureCanvasAgg(fig)
+    canvas.draw()
+    buf = io.BytesIO()
+    canvas.print_png(buf)
+    buf.seek(0)
+
+    image = Image.open(buf)
+    image.save(full_path, format="PNG")
+
+
+#Функція, що відповідає за відкриття діалогу з експорту графіку
+def export_dialog():
+    format_choice = tk.StringVar(value="pdf")  # По замовчуванню формат - PDF
+
+    def browse_directory():
+        directory = filedialog.askdirectory()
+        if directory:
+            selected_path.set(directory)
+
+    def export_selected_format():
+        selected_format = format_choice.get()
+        save_path = selected_path.get()
+        filename = file_name_entry.get()
+
+        # Обробка помилок: пустий рядок вводу шляху
+        if not save_path:
+            tkinter.messagebox.showerror("Помилка", "Шлях не може бути пустим.")
+            return
+
+        # Обробка помилик: пустий рядок вводу імені
+        if not filename:
+            tkinter.messagebox.showerror("Помилка", "Назва файлу не може бути пустою.")
+            return
+
+        # Обробка помилик: недійсний щлях
+        if not os.path.exists(save_path):
+            tkinter.messagebox.showerror("Помилка", "Вказаний шлях є недійсним.")
+            return
+
+        if selected_format == "pdf":
+            export_to_pdf(save_path, filename)
+        elif selected_format == "png":
+            export_to_png(save_path, filename)
+
+        dialog.destroy()
+
+    dialog = tk.Toplevel(root)
+    dialog.title("Експорт")
+
+    program_path = os.path.dirname(os.path.abspath(__file__))
+
+    screen_width = dialog.winfo_screenwidth()
+    screen_height = dialog.winfo_screenheight()
+
+    window_width = 543
+    window_height = 320
+    x_position = (screen_width - window_width) // 2
+    y_position = (screen_height - window_height) // 2
+
+    dialog.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")  # Установить размеры и положение
+
+    icon_path = "logo.ico"
+    if os.path.exists(icon_path):
+        dialog.iconbitmap(icon_path)
+
+    dialog.grab_set()  # Робить вікно діалогу модальним
+
+    # Для закриття через Х
+    def dialog_closed():
+        dialog.destroy()
+
+    dialog.protocol("WM_DELETE_WINDOW", dialog_closed)
+
+    format_label = tk.Label(dialog, text="Select Format:")
+    format_label.pack()
+
+    format_frame = tk.Frame(dialog)
+    format_frame.pack()
+
+    # Радіокнопки з форматами
+    pdf_radio = tk.Radiobutton(format_frame, text="PDF", variable=format_choice, value="pdf")
+    pdf_radio.pack(side="left", padx=10)  # Выровнять радиокнопку влево
+    png_radio = tk.Radiobutton(format_frame, text="PNG", variable=format_choice, value="png")
+    png_radio.pack(side="left", padx=10)  # Выровнять радиокнопку влево
+
+    path_label = tk.Label(dialog, text="Обрати шлях:")
+    path_label.pack()
+
+    selected_path = tk.StringVar(value=program_path)  # Шлях за замовчуванням - шлях до програми
+    path_entry = tk.Entry(dialog, textvariable=selected_path)
+    path_entry.pack()
+
+    browse_button = tk.Button(dialog, text="Пошук", command=browse_directory)
+    browse_button.pack()
+
+    file_name_label = tk.Label(dialog, text="Ввести назву файлу:")
+    file_name_label.pack()
+
+    file_name_entry = tk.Entry(dialog)
+    file_name_entry.insert(0, "graph")  # Значення за замовчуванням - graph
+    file_name_entry.pack()
+
+    export_button = tk.Button(dialog, text="Експортувати", command=export_selected_format)
+    export_button.pack()
+
 
 root = tk.Tk()
 root.title("DeriGraph")
@@ -155,6 +281,7 @@ canvas.draw()
 canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
 toolbar = NavigationToolbar2Tk(canvas,
                                right_frame)
+
 toolbar.update()
 
 canvas.get_tk_widget().pack()
@@ -167,4 +294,6 @@ left_frame.pack(fill=tk.Y, expand=1)
 label = tk.Label(left_frame, text="hello", bg="red", font=(fontx, 15), width=10).pack(fill=tk.X, expand=1)
 btn = RoundedButton(left_frame, text="Input", highlightthickness=0,  width=100, height=60, radius=100, btnbackground="#0078ff", btnforeground="#ffffff", clicked=func)
 btn.pack(expand=True, fill="x")
+export_button = RoundedButton(left_frame, text="Export", highlightthickness=0, width=100, height=60, radius=100, btnbackground="#0078ff", btnforeground="#ffffff", clicked=export_dialog)
+export_button.pack(expand=True, fill="x")
 root.mainloop()
