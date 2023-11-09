@@ -17,6 +17,50 @@ import math
 from sympy import *
 from PIL import Image
 
+# Клас для зберігання інформації та виконання обов'язків об'єкту Граф.
+class Graph:
+    # Атрибути класу Граф.
+    # Перше - це діапазон осі Х.
+    # Друге - діапазон осі X, точки розриву.
+    # Третє - діапазон осі У, звичайні значення.
+    # Четверте - діапазон осі У, похідна від графу.
+    x = []
+    bx = []
+    y = []
+    dy = []
+
+    # У класа Граф також присутні ще чотири аргументи
+    # - координата початку, кінця, крок і саме рівняння у форматі str.
+    def __init__(self, start, end, step, eq):
+        self.start = start
+        self.end = end
+        self.step = step
+        self.eq = eq
+
+    # Повертає усі значення осі Х.
+    def getX(self):
+        return 'X'
+
+    # Повертає усі значення осі Х.
+    def getBX(self):
+        return 'BX'
+
+    # Повертає значення осі У.
+    def getY(self):
+        return 'Y'
+
+    # Повертає значення похідної осі У.
+    def getDY(self):
+        return 'DX'
+
+    # Вивід даних класу для тестування.
+    def print(self):
+        str = "start {0} to an end {1} with the step of {2} of the such {3} equation.".format(self.start,
+                                                                                              self.end,
+                                                                                              self.step,
+                                                                                              self.eq)
+        return str
+
 
 # Клас для реалізації зкруглених границь у кнопки. З StackOverFlow.
 class RoundedButton(tk.Canvas):
@@ -126,19 +170,19 @@ def merge_separate2(menu):
 
 
 def derivative_on_off1(menu):
-        menu.entryconfigure(4, label="Clicked!", command=lambda: derivative_on_off2(file_menu))
+    menu.entryconfigure(4, label="Derivative OFF", command=lambda: derivative_on_off2(file_menu))
 
 
 def derivative_on_off2(menu):
-    menu.entryconfigure(4, label="Clicked!", command=lambda: derivative_on_off1(file_menu))
+    menu.entryconfigure(4, label="Derivative ON", command=lambda: derivative_on_off1(file_menu))
 
 
 def intersection_on_off1(menu):
-    menu.entryconfigure(5, label="Clicked!", command=lambda: intersection_on_off2(file_menu))
+    menu.entryconfigure(5, label="Intersection OFF", command=lambda: intersection_on_off2(file_menu))
 
 
 def intersection_on_off2(menu):
-    menu.entryconfigure(5, label="Clicked!", command=lambda: intersection_on_off1(file_menu))
+    menu.entryconfigure(5, label="Intersection ON", command=lambda: intersection_on_off1(file_menu))
 
 #Функція для збереження графіку у PDF форматі
 def export_to_pdf(path, filename):
@@ -259,6 +303,56 @@ def export_dialog():
     export_button.pack()
 
 
+# Функція для показування елементів у списку.
+def show(iterable):
+    for el in iterable:
+        el.pack(fill="x")
+
+
+# Функція для закриття елементів у списку.
+def close(iterable):
+    for el in iterable:
+        el.pack_forget()
+
+
+# Функція для очищення полів Entry.
+def clear(entries):
+    for entry in entries:
+        entry.delete(0, tk.END);
+
+
+# Функція для опції меню Input.
+def input_show():
+    global interface
+    close(interface)
+    interface = []
+    interface = [label_start, entry_start, label_end, entry_end, label_step, entry_step, label_eq, entry_eq]
+    entries = [entry_start, entry_end, entry_step, entry_eq]
+    clear(entries)
+    border_color.pack(side="left", expand=tk.NO, fill=tk.Y, padx=5)
+    left_frame.pack(fill=tk.Y, expand=1)
+    show(interface)
+    input_btn.pack(expand=True, fill="x")
+    interface.append(input_btn)
+    interface.append(border_color)
+    interface.append(left_frame)
+    entry_start.focus()
+
+
+# Функція для кнопки меню Input.
+def input_execute():
+    global graphs, interface
+    graphs = []
+    start = entry_start.get()
+    end = entry_end.get()
+    step = entry_step.get()
+    eq = entry_eq.get()
+    graphs.append(Graph(start, end, step, eq))
+    print(graphs[0].print())
+    if True:
+        close(interface)
+
+
 # Ініціалізуймо головне вікно програми.
 root = tk.Tk()
 # Встановлюємо назву вікна.
@@ -268,7 +362,7 @@ root.iconbitmap("logo.ico")
 # Задаємо колір заднього плану.
 root.config(bg="#1E7D55")
 
-# Обчилюємо розмір вікна. Вона завжди буде дорівнювати розширенню екрана.
+# Обчилюємо розмір вікна. Він завжди буде дорівнювати розширенню екрана.
 screen_width = root.winfo_screenwidth()
 screen_height = root.winfo_screenheight()
 root.geometry("{}x{}+0+0".format(str(screen_width), str(screen_height)))
@@ -278,7 +372,7 @@ menu_bar = tk.Menu(root)
 
 # Створюємо меню для команд програми.
 file_menu = tk.Menu(menu_bar)
-file_menu.add_command(label="Input")
+file_menu.add_command(label="Input", command=input_show)
 file_menu.add_command(label="Change")
 file_menu.add_command(label="Merge", command=lambda: merge_separate1(file_menu))
 file_menu.add_command(label="Derivative ON", command=lambda: derivative_on_off1(file_menu))
@@ -321,7 +415,7 @@ derivative = diff(equation)
 derivative = str(derivative)
 dy = eval(derivative)
 
-# plot і scatter несумісні !!!!!!!                                                     <----
+# plot і scatter несумісні !!!
 # plot1 = fig.add_subplot(121)
 # plot1.plot(i, y, color="g", label=equation)
 # plot1.legend()
@@ -349,45 +443,38 @@ fontx = "Small Fonts"
 
 # Встановлюємо контур-фрейм лівого фрейму.
 border_color = tk.Frame(wrapper_frame, bd=5, bg="#000000")
-border_color.pack(side="left", expand=tk.NO, fill=tk.Y, padx=5)
 
 # Створюємо лівий допоміжний фрейм.
 left_frame = tk.Frame(border_color, bg="#3FF3A7")
-left_frame.pack(fill=tk.Y, expand=1)
 
-
-# Створюємо і показуємо текст і поле вводу початку відліку.
+# Створюємо текст і поле вводу початку відліку.
 label_start = tk.Label(left_frame, text="X starts at:", font=(fontx, 20), bg="#3FF3A7",
                        highlightbackground = "#206F23", fg = "#206F23")
 entry_start = tk.Entry(left_frame, bg="#E9FD00", font=(fontx, 30, "bold"), width=5)
-label_start.pack(fill="x")
-entry_start.pack(fill="x")
 
-# Створюємо і показуємо текст і поле вводу кінця відліку.
+# Створюємо текст і поле вводу кінця відліку.
 label_end = tk.Label(left_frame, text = "X ends at:", font=(fontx, 20), bg="#3FF3A7",
                        highlightbackground = "#206F23", fg = "#206F23")
 entry_end = tk.Entry(left_frame, bg="#E9FD00", font=(fontx, 30, "bold"), width=5)
-label_end.pack(fill="x")
-entry_end.pack(fill="x")
 
-# Створюємо і показуємо текст і поле вводу кроку відліку.
+# Створюємо текст і поле вводу кроку відліку.
 label_step = tk.Label(left_frame, text = "The step:", font=(fontx, 20), bg="#3FF3A7",
                        highlightbackground = "#206F23", fg = "#206F23")
 entry_step = tk.Entry(left_frame, bg="#E9FD00", font=(fontx, 30, "bold"), width=5)
-label_step.pack(fill="x")
-entry_step.pack(fill="x")
 
-# Створюємо і показуємо текст і поле вводу рівняння.
+# Створюємо текст і поле вводу рівняння.
 label_eq = tk.Label(left_frame, text = "The equation:", font=(fontx, 20), bg="#3FF3A7",
                        highlightbackground = "#206F23", fg = "#206F23")
 entry_eq = tk.Entry(left_frame, bg="#E9FD00", font=(fontx, 30, "bold"), width=5)
-label_eq.pack(fill="x")
-entry_eq.pack(fill="x")
 
-# Створюємо і показуємо кнопку з зкругленими границями.
-btn = RoundedButton(left_frame, text="Input", highlightthickness=0,  width=100, height=60, radius=100,
-                    btnbackground="#FFB526", btnforeground="#000000", clicked=func)
-btn.pack(expand=True, fill="x")
+# Глобальна змінна для збереження об'єктів інтерфейсу.
+interface = []
+# Глобальна змінна для збереження графів.
+graphs = []
+
+# Створюємо кнопку з зкругленими границями.
+input_btn = RoundedButton(left_frame, text="Input", highlightthickness=0,  width=100, height=60, radius=100,
+                    btnbackground="#FFB526", btnforeground="#000000", clicked=input_execute)
 
 # Основний цикл вікна tkinter.
 root.mainloop()
