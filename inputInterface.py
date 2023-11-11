@@ -343,14 +343,82 @@ def input_show():
 def input_execute():
     global graphs, interface
     graphs = []
+    comments = []
     start = entry_start.get()
+    start, comments = input_check_range(start, comments, "first")
     end = entry_end.get()
+    end, comments = input_check_range(end, comments, "second")
+    if(start >= end):
+        comments.clear()
+        comments.append("first")
+        comments.append("second")
     step = entry_step.get()
+    step, comments = input_check_step(step, comments, "third")
     eq = entry_eq.get()
-    graphs.append(Graph(start, end, step, eq))
-    print(graphs[0].print())
-    if True:
+    eq, comments = input_check_eq(eq, comments, "fourth")
+    if comments != []:
+        try:
+            del interface[interface.index(comment)]
+        except:
+            pass
+        str = input_comment(comments)
+        comment.config(text=str)
+        interface.append(comment)
+        comment.pack(fill="x")
+    else:
+        graphs.append(Graph(start, end, step, eq))
+        print(graphs[0].print())
         close(interface)
+
+
+# Функція для перетворення числа у число з плаваючою крапкою.
+def toFloat(x):
+    try:
+        return float(x)
+    except:
+        raise TypeError
+
+
+# Функція для перевірки значень діапазону.
+def input_check_range(x, comments, comment):
+    try:
+        x = toFloat(x)
+        if(x > 1000000 or x < -1000000):
+            raise OverflowError
+    except:
+        comments.append(comment)
+    return x, comments
+
+
+# Функція для перевірки значень діапазону.
+def input_check_step(x, comments, comment):
+    try:
+        x = toFloat(x)
+        if(x > 1000000 or x < 0.01):
+            raise OverflowError
+    except:
+        comments.append(comment)
+    return x, comments
+
+
+# Функція для перевірки рівняння.
+def input_check_eq(eq, comments, comment):
+    try:
+        x = 0
+        eval(eq)
+    except (SyntaxError, ValueError, NameError):
+        comments.append(comment)
+    return eq, comments
+
+
+# Функція для конкатенації підказки користувача.
+def input_comment(comments):
+    comments[0] = comments[0].capitalize()
+    str = ", ".join(comments)
+    ist =  "is"
+    if(len(comments) > 1):
+        ist = "are"
+    return "{0} {1} invalid.".format(str, ist)
 
 
 # Ініціалізуймо головне вікно програми.
@@ -466,6 +534,10 @@ entry_step = tk.Entry(left_frame, bg="#E9FD00", font=(fontx, 30, "bold"), width=
 label_eq = tk.Label(left_frame, text = "The equation:", font=(fontx, 20), bg="#3FF3A7",
                        highlightbackground = "#206F23", fg = "#206F23")
 entry_eq = tk.Entry(left_frame, bg="#E9FD00", font=(fontx, 30, "bold"), width=5)
+
+# Створюємо надпис для підказок користувачу.
+comment = tk.Label(left_frame, text = "", font=(fontx, 20), bg="#3FF3A7", wraplength=180,
+                       highlightbackground = "#206F23", fg = "#206F23")
 
 # Глобальна змінна для збереження об'єктів інтерфейсу.
 interface = []
