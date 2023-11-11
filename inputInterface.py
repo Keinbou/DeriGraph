@@ -408,6 +408,8 @@ def input_check_eq(eq, comments, comment):
         eval(eq)
     except (SyntaxError, ValueError, NameError):
         comments.append(comment)
+    except (ZeroDivisionError, ArithmeticError):
+        pass
     return eq, comments
 
 
