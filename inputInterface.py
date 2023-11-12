@@ -10,12 +10,26 @@ from tkinter import filedialog
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import math
 from sympy import *
 from PIL import Image
+from pathlib import Path
+import matplotlib.pylab as pylab
+
+# Встановлюємо шрифт проєкту.
+mpl.rcParams['font.size'] = 20
+params = {'legend.fontsize': 15,
+         'axes.labelsize': 10,
+         'axes.titlesize': 30,
+          'xtick.labelsize': 10,
+          'ytick.labelsize': 10}
+pylab.rcParams.update(params)
+fontx = "Small Fonts"
+fpath = Path("small_font.ttf")
 
 # Клас для зберігання інформації та виконання обов'язків об'єкту Граф.
 class Graph:
@@ -28,6 +42,7 @@ class Graph:
     bx = []
     y = []
     dy = []
+    deri = ""
 
     # У класа Граф також присутні ще чотири аргументи
     # - координата початку, кінця, крок і саме рівняння у форматі str.
@@ -36,22 +51,55 @@ class Graph:
         self.end = end
         self.step = step
         self.eq = eq
+        self.getDeri()
+        self.getX()
+        self.getBX()
+        self.getY()
+        self.getDY()
 
     # Повертає усі значення осі Х.
     def getX(self):
-        return 'X'
+        self.x = []
+        x_list = np.arange(self.start, self.end, self.step)
+        for x in x_list:
+            try:
+                y = eval(self.eq)
+                self.x.append(x)
+            except:
+                pass
+        return self.x
 
-    # Повертає усі значення осі Х.
+    # Повертає усі значення осі Х, які є точками розриву.
     def getBX(self):
-        return 'BX'
+        self.bx = []
+        bx_list = np.arange(self.start, self.end, self.step)
+        for x in bx_list:
+            try:
+                y = eval(self.eq)
+            except:
+                self.bx.append(x)
+        return self.bx
 
     # Повертає значення осі У.
     def getY(self):
-        return 'Y'
+        self.y = []
+        for x in self.x:
+            self.y.append(eval(self.eq))
+        return self.y
 
     # Повертає значення похідної осі У.
     def getDY(self):
-        return 'DX'
+        self.dy = []
+        for x in self.x:
+            self.dy.append(eval(self.deri))
+        return self.dy
+
+    # Повертає рівняння похідної.
+    def getDeri(self):
+        deri = diff(self.eq)
+        deri = str(deri)
+        self.deri = deri
+        return self.deri
 
     # Вивід даних класу для тестування.
     def print(self):
@@ -154,19 +202,32 @@ class RoundedButton(tk.Canvas):
             self.itemconfig(self.rect, fill=self.btnbackground)
 
 
-# Тимчасова порожня функція.
-def func():
-    print("Button pressed")
-
-
 # Далі слідкують функції для команд, функціонал яких змінюється попарно у циклі.
-def merge_separate1(menu):
-    # entryconfigure - функція для зміни параметрів полей у меню, де перший аргумент - номер поля, починаючи з 1.
-    menu.entryconfigure(3, label="Separate", command=lambda: merge_separate2(file_menu))
+def merge_separate1(menu, ax1, ax2):
+    global graphs
+    ax1.remove()
+    ax2.remove()
+    graph = graphs[0]
+    ax1 = fig.add_subplot(1, 1, 1)
+    str = "Function"
+    try:
+        file_menu.index("Derivative ON")
+        str += " and derivative"
+        ax1.set_title(label=str, color="black", loc="left")
+        ax1.scatter(graph.x, graph.y, s=5, color="#FFB526", label=graph.eq)
+        ax1.scatter(graph.x, graph.dy, s=5, color="b", label=graph.deri)
+    except:
+        ax1.set_title(label=str, color="black", loc="left")
+        ax1.scatter(graph.x, graph.y, s=5, color="#FFB526", label=graph.eq)
+    ax1.legend()
+    canvas.draw()
+    # entryconfigure() - функція для зміни параметрів полей у меню, де перший аргумент - номер поля, починаючи з 1.
+    menu.entryconfigure(3, label="Separate", command=lambda: merge_separate2(file_menu, ax1, ax2))
 
 
-def merge_separate2(menu):
-    menu.entryconfigure(3, label="Merge", command=lambda: merge_separate1(file_menu))
+def merge_separate2(menu, ax1, ax2):
+    menu.entryconfigure(3, label="Merge", command=lambda: merge_separate1(file_menu, ax1, ax2))
+
 
 
 def derivative_on_off1(menu):
@@ -223,17 +284,17 @@ def export_dialog():
 
         # Обробка помилок: пустий рядок вводу шляху
         if not save_path:
-            tkinter.messagebox.showerror("Помилка", "Шлях не може бути пустим.")
+            tkinter.messagebox.showerror("Error", "The path cannot be empty.")
             return
 
         # Обробка помилик: пустий рядок вводу імені
         if not filename:
-            tkinter.messagebox.showerror("Помилка", "Назва файлу не може бути пустою.")
+            tkinter.messagebox.showerror("Error", "Name of the file cannot be empty.")
             return
 
         # Обробка помилик: недійсний щлях
         if not os.path.exists(save_path):
-            tkinter.messagebox.showerror("Помилка", "Вказаний шлях є недійсним.")
+            tkinter.messagebox.showerror("Error", "Such path doesn\'t exist.")
             return
 
         if selected_format == "pdf":
@@ -244,7 +305,7 @@ def export_dialog():
         dialog.destroy()
 
     dialog = tk.Toplevel(root)
-    dialog.title("Експорт")
+    dialog.title("Export")
 
     program_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -282,24 +343,24 @@ def export_dialog():
     png_radio = tk.Radiobutton(format_frame, text="PNG", variable=format_choice, value="png")
     png_radio.pack(side="left", padx=10)  # Выровнять радиокнопку влево
 
-    path_label = tk.Label(dialog, text="Обрати шлях:")
+    path_label = tk.Label(dialog, text="Select path:")
     path_label.pack()
 
     selected_path = tk.StringVar(value=program_path)  # Шлях за замовчуванням - шлях до програми
     path_entry = tk.Entry(dialog, textvariable=selected_path)
     path_entry.pack()
 
-    browse_button = tk.Button(dialog, text="Пошук", command=browse_directory)
+    browse_button = tk.Button(dialog, text="Search", command=browse_directory)
     browse_button.pack()
 
-    file_name_label = tk.Label(dialog, text="Ввести назву файлу:")
+    file_name_label = tk.Label(dialog, text="Input file name:")
     file_name_label.pack()
 
     file_name_entry = tk.Entry(dialog)
     file_name_entry.insert(0, "graph")  # Значення за замовчуванням - graph
     file_name_entry.pack()
 
-    export_button = tk.Button(dialog, text="Експортувати", command=export_selected_format)
+    export_button = tk.Button(dialog, text="Export", command=export_selected_format)
     export_button.pack()
 
 
@@ -324,18 +385,28 @@ def clear(entries):
 # Функція для опції меню Input.
 def input_show():
     global interface
+    # Закрити попереднє вікно.
     close(interface)
+    # Зробити interface порожнім.
     interface = []
+    # Додати до списку інтерфейсу набор елементів поточного вікна.
     interface = [label_start, entry_start, label_end, entry_end, label_step, entry_step, label_eq, entry_eq]
     entries = [entry_start, entry_end, entry_step, entry_eq]
+    # Зробити поля введення порожніми, оскільки додається повністю новий екземпляр Graph.
     clear(entries)
+    # Показати фрейм-контур.
     border_color.pack(side="left", expand=tk.NO, fill=tk.Y, padx=5)
+    # Показати фрейм-фон.
     left_frame.pack(fill=tk.Y, expand=1)
+    # Показати елементи інтерфейсу з однотипним методом pack().
     show(interface)
+    # Показати кнопку для підтвердження дії.
     input_btn.pack(expand=True, fill="x")
+    # Додати до списку інтерфейсу елементи з нестандартним методом pack().
     interface.append(input_btn)
     interface.append(border_color)
     interface.append(left_frame)
+    # Задати фокус на поле уведення.
     entry_start.focus()
 
 
@@ -344,27 +415,36 @@ def input_execute():
     global graphs, interface
     graphs = []
     comments = []
+    # Перевірка початку координат. Діапазон [-1000000, 1000000].
     start = entry_start.get()
-    start, comments = input_check_range(start, comments, "first")
+    start, comments = input_check_range(start, comments, "the first")
+    # Перевірка кінця координат. Діапазон [-1000000, 1000000].
     end = entry_end.get()
-    end, comments = input_check_range(end, comments, "second")
+    end, comments = input_check_range(end, comments, "the second")
+    # Якщо початок більше або дорівнює кінцю - вивести повідомлення користувачу.
     if(start >= end):
         comments.clear()
         comments.append("first")
         comments.append("second")
+    # Перевірка кроку координат. Діапазон [0.01, 1000000].
     step = entry_step.get()
-    step, comments = input_check_step(step, comments, "third")
+    step, comments = input_check_step(step, comments, "the third")
+    # Перевірка синтаксису рівняння. Воно може містити лише аргумент х.
     eq = entry_eq.get()
-    eq, comments = input_check_eq(eq, comments, "fourth")
+    eq, comments = input_check_eq(eq, comments, "the fourth")
+    # Якщо список comments не пустий, то вивести користувачу повідомлення з вказівкою невірних полей.
     if comments != []:
+        # Якщо елемент не знайдено, то ловиться ValueError і нічого не відбувається.
         try:
             del interface[interface.index(comment)]
-        except:
+        except ValueError:
             pass
+        # Перетворення рядка.
         str = input_comment(comments)
         comment.config(text=str)
         interface.append(comment)
         comment.pack(fill="x")
+    # Інакше - створити екземпляр Graph і додати його до глобального списку графів.
     else:
         graphs.append(Graph(start, end, step, eq))
         print(graphs[0].print())
@@ -444,7 +524,7 @@ menu_bar = tk.Menu(root)
 file_menu = tk.Menu(menu_bar)
 file_menu.add_command(label="Input", command=input_show)
 file_menu.add_command(label="Change")
-file_menu.add_command(label="Merge", command=lambda: merge_separate1(file_menu))
+file_menu.add_command(label="Merge", command=lambda: merge_separate1(file_menu, ax1, ax2))
 file_menu.add_command(label="Derivative ON", command=lambda: derivative_on_off1(file_menu))
 file_menu.add_command(label="Intersection ON", command=lambda: intersection_on_off1(file_menu))
 file_menu.add_command(label="Export", command=export_dialog)
@@ -472,33 +552,29 @@ right_line_frame.pack(side="right", expand=tk.YES, fill=tk.BOTH, pady=20, padx=5
 right_frame = tk.Frame(right_line_frame, bd=30, bg="#3FF3A7")
 right_frame.pack(expand=tk.YES, fill=tk.BOTH, pady=5, padx=5)
 
+# Глобальна змінна для збереження графів.
+graphs = []
+
 # Створюємо фігуру, в якій розташовано усі графи.
 fig = plt.figure()
 
 # Тимчасова ініціалізація графами. Задаємо рівняння і знаходимо похідну.
-equation = "i ** 2"
-i = np.arange(0, math.pi*2, 0.05)
-# Функція eval() реалізує наше текстове рівняння зверху.
-y = eval(equation)
-derivative = diff(equation)
-# Обов'язково результат дифференцювання конвертувати обратно у рядок!
-derivative = str(derivative)
-dy = eval(derivative)
+graphs.append(Graph(0, math.pi*2, 0.05, "x**2"))
+graph = graphs[0]
 
-# plot і scatter несумісні !!!
-# plot1 = fig.add_subplot(121)
-# plot1.plot(i, y, color="g", label=equation)
-# plot1.legend()
-# plot2 = fig.add_subplot(122)
-# plot2.plot(i, dy, color="b", label=derivative)
-# plot2.legend()
-
-# Створюємо плот у фігурі. (111) позначають (1 вертикаль, 1 горизонталь, номер плоту).
-plot1 = fig.add_subplot(111)
+# Створюємо вісь у фігурі. (121) позначають (1 вертикаль, 2 горизонталь, 1 номер плоту).
+ax1 = fig.add_subplot(121)
+ax1.set_title(label="Function", color='black', loc='left', font=fpath)
 # Відображаємо наши координати на плоті. scatter краще оброблює точки розриву, ніж plot.
-plot1.scatter(i, y, c="#FFB526", s=5, label=equation)
-plot1.scatter(i, dy, color="b", s=5, label=derivative)
-plot1.legend()
+ax1.scatter(graph.x, graph.y, c="#FFB526", s=5, label=graph.eq)
+ax1.legend()
+
+# Створюємо вісь у фігурі. (122) позначають (1 вертикаль, 1 горизонталь, 2 номер плоту).
+ax2 = fig.add_subplot(122)
+ax2.set_title(label="Derivative", color='black', loc='left', font=fpath)
+# Відображаємо наши координати на плоті. scatter краще оброблює точки розриву, ніж plot.
+ax2.scatter(graph.x, graph.dy, color="b", s=5, label=graph.deri)
+ax2.legend()
 
 # Задаємо холст, на якому буде намальовано граф. Особоливість у тому, що можна вставити граф у будь-який фрейм.
 canvas = FigureCanvasTkAgg(fig, master=right_frame)
@@ -507,9 +583,6 @@ canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
 toolbar = NavigationToolbar2Tk(canvas, right_frame)
 toolbar.update()
 canvas.get_tk_widget().pack()
-
-# Встановлюємо шрифт проєкту.
-fontx = "Small Fonts"
 
 # Встановлюємо контур-фрейм лівого фрейму.
 border_color = tk.Frame(wrapper_frame, bd=5, bg="#000000")
@@ -543,8 +616,6 @@ comment = tk.Label(left_frame, text = "", font=(fontx, 20), bg="#3FF3A7", wraple
 
 # Глобальна змінна для збереження об'єктів інтерфейсу.
 interface = []
-# Глобальна змінна для збереження графів.
-graphs = []
 
 # Створюємо кнопку з зкругленими границями.
 input_btn = RoundedButton(left_frame, text="Input", highlightthickness=0,  width=100, height=60, radius=100,
