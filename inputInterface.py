@@ -553,6 +553,68 @@ def set_canvas():
     toolbar.update()
     canvas.get_tk_widget().pack()
 
+
+def show_manual():
+    manual ="""The start of X is in range of [-1000000, 1000000].
+The end of X is in range of [-1000000, 1000000].
+The step is in range of [0.01, 1000000].
+In the equation you can pass any arithmetic operations
+declared in Python and any functions declared in SymPy.
+For example:
+    Operations:
+    	+ addition
+    	- substaction
+    	* multiplication
+    	/ division
+    	** power
+    	() braces
+    To use a function put a value in its braces.
+    Functions and constants:
+    	sqrt() square root
+    	Pow() power
+    	log() logarithm
+    	pi the value of pi
+    and more in SymPy."""
+    dialog = tk.Toplevel(root)
+    dialog.title("Manual")
+
+    screen_width = dialog.winfo_screenwidth()
+    screen_height = dialog.winfo_screenheight()
+
+    window_width = 543
+    window_height = 320
+    x_position = (screen_width - window_width) // 2
+    y_position = (screen_height - window_height) // 2
+
+    dialog.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")  # Установить размеры и положение
+
+    icon_path = "logo.ico"
+    if os.path.exists(icon_path):
+        dialog.iconbitmap(icon_path)
+
+    main_frame = tk.Frame(dialog)
+    main_frame.pack(fill="both", expand=1)
+
+    my_canvas = tk.Canvas(main_frame)
+    my_canvas.pack(side="left", fill="both", expand=1)
+
+    yscrollbar = tk.Scrollbar(main_frame, orient="vertical", command=my_canvas.yview)
+    yscrollbar.pack(side="right", fill="y")
+    xscrollbar = tk.Scrollbar(dialog, orient="horizontal", command=my_canvas.xview)
+    xscrollbar.pack(side="bottom", fill="x")
+
+    my_canvas["yscrollcommand"] = yscrollbar.set
+    my_canvas["xscrollcommand"] = xscrollbar.set
+    my_canvas.bind('<Configure>', lambda e: my_canvas.configure(scrollregion = my_canvas.bbox("all")))
+
+    second_frame = tk.Frame(my_canvas)
+
+    my_canvas.create_window((0, 0), window=second_frame, anchor="nw")
+
+    manual_label = tk.Label(second_frame, text=manual, justify="left", font=("Times New Roman", 20))
+    manual_label.pack(side="left", expand=1, fill="both")
+
+
 # Ініціалізуймо головне вікно програми.
 root = tk.Tk()
 # Встановлюємо назву вікна.
@@ -582,6 +644,7 @@ file_menu.add_command(label="Share")
 
 # Створюємо порожній мануал.
 manual_menu = tk.Menu(menu_bar)
+manual_menu.add_command(label="Show", command=show_manual)
 
 # Додаємо до головного меню меню команд і мануал.
 menu_bar.add_cascade(label="Tasks", menu=file_menu)
