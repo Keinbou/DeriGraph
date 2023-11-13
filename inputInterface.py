@@ -57,6 +57,42 @@ class Graph:
         self.getY()
         self.getDY()
 
+    # Повернення початку координат.
+    def getStart(self):
+        return self.start
+
+    # Повернення кінця координат.
+    def getEnd(self):
+        return self.end
+
+    # Повернення кроку обчислень.
+    def getStep(self):
+        return self.step
+
+    # Повернення рівняння.
+    def getEq(self):
+        return self.eq
+
+    # Повертає список допустимих значень осі Х.
+    def getXlist(self):
+        return self.x
+
+    # Повертає список значень осі У, коли рівняння звичайне.
+    def getYlist(self):
+        return self.y
+
+    # Повертає список точок розриву.
+    def getBXlist(self):
+        return self.bx
+
+    # Повертає список значень осі У, коли рівняння - похідна.
+    def getDYlist(self):
+        return self.dy
+
+    # Повертає похідну.
+    def getDerifield(self):
+        return self.deri
+
     # Повертає усі значення осі Х.
     def getX(self):
         self.x = []
@@ -96,9 +132,9 @@ class Graph:
 
     # Повертає рівняння похідної.
     def getDeri(self):
-        deri = diff(self.eq)
-        deri = str(deri)
-        self.deri = deri
+        deriDiff = diff(self.eq)
+        deriStr = str(deriDiff)
+        self.deri = deriStr
         return self.deri
 
     # Вивід даних класу для тестування.
@@ -209,16 +245,14 @@ def merge_separate1(menu, ax1, ax2):
     ax2.remove()
     graph = graphs[0]
     ax1 = fig.add_subplot(1, 1, 1)
-    str = "Function"
     try:
         file_menu.index("Derivative ON")
-        str += " and derivative"
-        ax1.set_title(label=str, color="black", loc="left")
-        ax1.scatter(graph.x, graph.y, s=5, color="#FFB526", label=graph.eq)
-        ax1.scatter(graph.x, graph.dy, s=5, color="b", label=graph.deri)
+        ax1.set_title(label="Function and derivative", color="black", loc="left")
+        ax1.scatter(graph.getXlist(), graph.getYlist(), s=5, color="#FFB526", label=graph.getEq())
+        ax1.scatter(graph.getXlist(), graph.getDYlist(), s=5, color="b", label=graph.getDerifield())
     except:
-        ax1.set_title(label=str, color="black", loc="left")
-        ax1.scatter(graph.x, graph.y, s=5, color="#FFB526", label=graph.eq)
+        ax1.set_title(label="Function", color="black", loc="left")
+        ax1.scatter(graph.getXlist(), graph.y, s=5, color="#FFB526", label=graph.getEq())
     ax1.legend()
     canvas.draw()
     # entryconfigure() - функція для зміни параметрів полей у меню, де перший аргумент - номер поля, починаючи з 1.
@@ -411,7 +445,7 @@ def input_show():
 
 
 # Функція для кнопки меню Input.
-def input_execute():
+def input_execute(menu, ax1, ax2):
     global graphs, interface
     graphs = []
     comments = []
@@ -448,13 +482,19 @@ def input_execute():
     else:
         graphs.append(Graph(start, end, step, eq))
         print(graphs[0].print())
+        try:
+            file_menu.index("Merge")
+            merge_separate2(menu, ax1, ax2)
+        except:
+            merge_separate1(menu, ax1, ax2)
         close(interface)
 
 
 # Функція для перетворення числа у число з плаваючою крапкою.
 def toFloat(x):
     try:
-        return float(x)
+        temp = x
+        return float(temp)
     except:
         raise TypeError
 
@@ -502,6 +542,15 @@ def input_comment(comments):
         ist = "are"
     return "{0} {1} invalid.".format(str, ist)
 
+
+def set_canvas():
+    global canvas
+    canvas = FigureCanvasTkAgg(fig, master=right_frame)
+    canvas.draw()
+    canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
+    toolbar = NavigationToolbar2Tk(canvas, right_frame)
+    toolbar.update()
+    canvas.get_tk_widget().pack()
 
 # Ініціалізуймо головне вікно програми.
 root = tk.Tk()
@@ -577,12 +626,7 @@ ax2.scatter(graph.x, graph.dy, color="b", s=5, label=graph.deri)
 ax2.legend()
 
 # Задаємо холст, на якому буде намальовано граф. Особоливість у тому, що можна вставити граф у будь-який фрейм.
-canvas = FigureCanvasTkAgg(fig, master=right_frame)
-canvas.draw()
-canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
-toolbar = NavigationToolbar2Tk(canvas, right_frame)
-toolbar.update()
-canvas.get_tk_widget().pack()
+set_canvas()
 
 # Встановлюємо контур-фрейм лівого фрейму.
 border_color = tk.Frame(wrapper_frame, bd=5, bg="#000000")
@@ -619,7 +663,8 @@ interface = []
 
 # Створюємо кнопку з зкругленими границями.
 input_btn = RoundedButton(left_frame, text="Input", highlightthickness=0,  width=100, height=60, radius=100,
-                    btnbackground="#FFB526", btnforeground="#000000", clicked=input_execute)
+                          btnbackground="#FFB526", btnforeground="#000000",
+                          clicked=lambda: input_execute(file_menu, ax1, ax2))
 
 # Основний цикл вікна tkinter.
 root.mainloop()
