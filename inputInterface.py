@@ -526,6 +526,7 @@ def input_check_eq(eq, comments, comment):
     try:
         x = 0
         eval(eq)
+        diff(eq)
     except (SyntaxError, ValueError, NameError):
         comments.append(comment)
     except (ZeroDivisionError, ArithmeticError):
