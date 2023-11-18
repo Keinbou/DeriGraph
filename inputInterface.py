@@ -238,6 +238,46 @@ class RoundedButton(tk.Canvas):
             self.itemconfig(self.rect, fill=self.btnbackground)
 
 
+def highlight_points(menu, ax1, ax2):
+    global interface
+    # Закрити попереднє вікно.
+    close(interface)
+
+    # Додати до списку інтерфейсу набор елементів поточного вікна.
+    interface = [label_x_koor, entry_x, label_y_koor, entry_y]
+
+    # Показати фрейм-контур.
+    border_color.pack(side="left", expand=tk.NO, fill=tk.Y, padx=5)
+    # Показати фрейм-фон.
+    left_frame.pack(fill=tk.Y, expand=1)
+    # Показати елементи інтерфейсу з однотипним методом pack().
+    show(interface)
+
+
+# Function to print mouse click event coordinates
+def onclick(event):
+    global entry_x
+    global entry_y
+
+    if event.xdata is not None and event.ydata is not None:
+        entry_x.delete(0, tk.END)
+        entry_y.delete(0, tk.END)
+        entry_x.insert(0, "{:.3}".format(event.xdata))
+        entry_y.insert(0, "{:.3}".format(event.ydata))
+    else:
+        entry_x.delete(0, tk.END)
+        entry_y.delete(0, tk.END)
+
+    # print([event.xdata, event.ydata])
+
+
+# Функція для завершення процесу після закриття вікна
+def quit_me():
+    # print('quit')
+    root.quit()
+    root.destroy()
+
+
 # Далі слідкують функції для команд, функціонал яких змінюється попарно у циклі.
 def merge_separate1(menu, ax1, ax2):
     global graphs
@@ -262,22 +302,41 @@ def merge_separate1(menu, ax1, ax2):
 def merge_separate2(menu, ax1, ax2):
     menu.entryconfigure(3, label="Merge", command=lambda: merge_separate1(file_menu, ax1, ax2))
 
+    global graphs
+    ax1.remove()
+    graph = graphs[0]
+
+    # Створюємо вісь у фігурі. (121) позначають (1 вертикаль, 2 горизонталь, 1 номер плоту).
+    ax1 = fig.add_subplot(121)
+    ax1.set_title(label="Function", color='black', loc='left', font=fpath)
+    # Відображаємо наши координати на плоті. scatter краще оброблює точки розриву, ніж plot.
+    ax1.scatter(graph.x, graph.y, c="#FFB526", s=5, label=graph.eq)
+    ax1.legend()
+
+    # Створюємо вісь у фігурі. (122) позначають (1 вертикаль, 2 горизонталь, 2 номер плоту).
+    ax2 = fig.add_subplot(122)
+    ax2.set_title(label="Derivative", color='black', loc='left', font=fpath)
+    # Відображаємо наши координати на плоті. scatter краще оброблює точки розриву, ніж plot.
+    ax2.scatter(graph.x, graph.dy, color="b", s=5, label=graph.deri)
+    ax2.legend()
+
+    canvas.draw()
 
 
 def derivative_on_off1(menu):
-    menu.entryconfigure(4, label="Derivative OFF", command=lambda: derivative_on_off2(file_menu))
+    menu.entryconfigure(5, label="Derivative OFF", command=lambda: derivative_on_off2(file_menu))
 
 
 def derivative_on_off2(menu):
-    menu.entryconfigure(4, label="Derivative ON", command=lambda: derivative_on_off1(file_menu))
+    menu.entryconfigure(5, label="Derivative ON", command=lambda: derivative_on_off1(file_menu))
 
 
 def intersection_on_off1(menu):
-    menu.entryconfigure(5, label="Intersection OFF", command=lambda: intersection_on_off2(file_menu))
+    menu.entryconfigure(6, label="Intersection OFF", command=lambda: intersection_on_off2(file_menu))
 
 
 def intersection_on_off2(menu):
-    menu.entryconfigure(5, label="Intersection ON", command=lambda: intersection_on_off1(file_menu))
+    menu.entryconfigure(6, label="Intersection ON", command=lambda: intersection_on_off1(file_menu))
 
 #Функція для збереження графіку у PDF форматі
 def export_to_pdf(path, filename):
@@ -637,6 +696,7 @@ file_menu = tk.Menu(menu_bar)
 file_menu.add_command(label="Input", command=input_show)
 file_menu.add_command(label="Change")
 file_menu.add_command(label="Merge", command=lambda: merge_separate1(file_menu, ax1, ax2))
+file_menu.add_command(label="Highlight points", command=lambda: highlight_points(file_menu, ax1, ax2))
 file_menu.add_command(label="Derivative ON", command=lambda: derivative_on_off1(file_menu))
 file_menu.add_command(label="Intersection ON", command=lambda: intersection_on_off1(file_menu))
 file_menu.add_command(label="Export", command=export_dialog)
@@ -682,12 +742,18 @@ ax1.set_title(label="Function", color='black', loc='left', font=fpath)
 ax1.scatter(graph.x, graph.y, c="#FFB526", s=5, label=graph.eq)
 ax1.legend()
 
+# Bind the button_press_event with the onclick() method
+fig.canvas.mpl_connect('button_press_event', onclick)
+
 # Створюємо вісь у фігурі. (122) позначають (1 вертикаль, 1 горизонталь, 2 номер плоту).
 ax2 = fig.add_subplot(122)
 ax2.set_title(label="Derivative", color='black', loc='left', font=fpath)
 # Відображаємо наши координати на плоті. scatter краще оброблює точки розриву, ніж plot.
 ax2.scatter(graph.x, graph.dy, color="b", s=5, label=graph.deri)
 ax2.legend()
+
+# Bind the button_press_event with the onclick() method
+fig.canvas.mpl_connect('button_press_event', onclick)
 
 # Задаємо холст, на якому буде намальовано граф. Особоливість у тому, що можна вставити граф у будь-який фрейм.
 set_canvas()
@@ -697,6 +763,15 @@ border_color = tk.Frame(wrapper_frame, bd=5, bg="#000000")
 
 # Створюємо лівий допоміжний фрейм.
 left_frame = tk.Frame(border_color, bg="#3FF3A7")
+
+label_x_koor = tk.Label(left_frame, text="Х coordinate:", font=(fontx, 20), bg="#3FF3A7", highlightbackground="#206F23",
+                        fg="#206F23")
+label_y_koor = tk.Label(left_frame, text="Y coordinate:", font=(fontx, 20), bg="#3FF3A7", highlightbackground="#206F23",
+                        fg="#206F23")
+entry_x = tk.Entry(left_frame, bg="#E9FD00", font=(fontx, 30, "bold"), width=5)
+# entry_x = tk.Entry(left_frame, bg="#E9FD00", font=(fontx, 30, "bold"), width=5, state="readonly")
+# entry_y = tk.Entry(left_frame, bg="#E9FD00", font=(fontx, 30, "bold"), width=5, state="readonly")
+entry_y = tk.Entry(left_frame, bg="#E9FD00", font=(fontx, 30, "bold"), width=5)
 
 # Створюємо текст і поле вводу початку відліку.
 label_start = tk.Label(left_frame, text="X starts at:", font=(fontx, 20), bg="#3FF3A7",
@@ -730,5 +805,6 @@ input_btn = RoundedButton(left_frame, text="Input", highlightthickness=0,  width
                           btnbackground="#FFB526", btnforeground="#000000",
                           clicked=lambda: input_execute(file_menu, ax1, ax2))
 
+root.protocol("WM_DELETE_WINDOW", quit_me)
 # Основний цикл вікна tkinter.
 root.mainloop()
