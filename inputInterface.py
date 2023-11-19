@@ -238,7 +238,7 @@ class RoundedButton(tk.Canvas):
             self.itemconfig(self.rect, fill=self.btnbackground)
 
 
-def highlight_points(menu, ax1, ax2):
+def highlight_points():
     global interface
     # Закрити попереднє вікно.
     close(interface)
@@ -279,64 +279,83 @@ def quit_me():
 
 
 # Далі слідкують функції для команд, функціонал яких змінюється попарно у циклі.
-def merge_separate1(menu, ax1, ax2):
-    global graphs
+def merge_separate1():
+    global graphs, MERGE_SEPARATE, DERI_ON_OFF, ax1, ax2
     ax1.remove()
-    ax2.remove()
+    if ax2 is not None:
+        ax2.remove()
     graph = graphs[0]
     ax1 = fig.add_subplot(1, 1, 1)
-    try:
-        file_menu.index("Derivative ON")
-        ax1.set_title(label="Function and derivative", color="black", loc="left")
+    if DERI_ON_OFF == 1:
+        ax1.set_title(label="Function and derivative", color="black", loc="left", font=fpath)
         ax1.scatter(graph.getXlist(), graph.getYlist(), s=5, color="#FFB526", label=graph.getEq())
         ax1.scatter(graph.getXlist(), graph.getDYlist(), s=5, color="b", label=graph.getDerifield())
-    except:
-        ax1.set_title(label="Function", color="black", loc="left")
+    elif DERI_ON_OFF == 0:
+        ax1.set_title(label="Function", color="black", loc="left", font=fpath)
         ax1.scatter(graph.getXlist(), graph.y, s=5, color="#FFB526", label=graph.getEq())
     ax1.legend()
     canvas.draw()
+    MERGE_SEPARATE = 1
     # entryconfigure() - функція для зміни параметрів полей у меню, де перший аргумент - номер поля, починаючи з 1.
-    menu.entryconfigure(3, label="Separate", command=lambda: merge_separate2(file_menu, ax1, ax2))
+    file_menu.entryconfigure(3, label="Separate", command=merge_separate2)
 
 
-def merge_separate2(menu, ax1, ax2):
-    menu.entryconfigure(3, label="Merge", command=lambda: merge_separate1(file_menu, ax1, ax2))
-
-    global graphs
-    ax1.remove()
+def merge_separate2():
+    global graphs, MERGE_SEPARATE, DERI_ON_OFF, ax1, ax2
     graph = graphs[0]
+    if DERI_ON_OFF == 1:
+        ax1.remove()
+        # Створюємо вісь у фігурі. (121) позначають (1 вертикаль, 2 горизонталь, 1 номер плоту).
+        ax1 = fig.add_subplot(121)
+        ax1.set_title(label="Function", color='black', loc='left', font=fpath)
+        # Відображаємо наши координати на плоті. scatter краще оброблює точки розриву, ніж plot.
+        ax1.scatter(graph.x, graph.y, c="#FFB526", s=5, label=graph.eq)
+        ax1.legend()
 
-    # Створюємо вісь у фігурі. (121) позначають (1 вертикаль, 2 горизонталь, 1 номер плоту).
-    ax1 = fig.add_subplot(121)
-    ax1.set_title(label="Function", color='black', loc='left', font=fpath)
-    # Відображаємо наши координати на плоті. scatter краще оброблює точки розриву, ніж plot.
-    ax1.scatter(graph.x, graph.y, c="#FFB526", s=5, label=graph.eq)
-    ax1.legend()
-
-    # Створюємо вісь у фігурі. (122) позначають (1 вертикаль, 2 горизонталь, 2 номер плоту).
-    ax2 = fig.add_subplot(122)
-    ax2.set_title(label="Derivative", color='black', loc='left', font=fpath)
-    # Відображаємо наши координати на плоті. scatter краще оброблює точки розриву, ніж plot.
-    ax2.scatter(graph.x, graph.dy, color="b", s=5, label=graph.deri)
-    ax2.legend()
-
-    canvas.draw()
-
-
-def derivative_on_off1(menu):
-    menu.entryconfigure(5, label="Derivative OFF", command=lambda: derivative_on_off2(file_menu))
-
-
-def derivative_on_off2(menu):
-    menu.entryconfigure(5, label="Derivative ON", command=lambda: derivative_on_off1(file_menu))
+        # Створюємо вісь у фігурі. (122) позначають (1 вертикаль, 2 горизонталь, 2 номер плоту).
+        ax2 = fig.add_subplot(122)
+        ax2.set_title(label="Derivative", color='black', loc='left', font=fpath)
+        # Відображаємо наши координати на плоті. scatter краще оброблює точки розриву, ніж plot.
+        ax2.scatter(graph.x, graph.dy, color="b", s=5, label=graph.deri)
+        ax2.legend()
+        canvas.draw()
+    elif DERI_ON_OFF == 0:
+        ax2 = None
+        merge_separate1()
+    MERGE_SEPARATE = 0
+    file_menu.entryconfigure(3, label="Merge", command=merge_separate1)
 
 
-def intersection_on_off1(menu):
-    menu.entryconfigure(6, label="Intersection OFF", command=lambda: intersection_on_off2(file_menu))
+def derivative_on_off1():
+    global DERI_ON_OFF, MERGE_SEPARATE
+    DERI_ON_OFF = 0
+    if MERGE_SEPARATE == 1:
+        merge_separate2()
+    elif MERGE_SEPARATE == 0:
+        merge_separate1()
+    file_menu.entryconfigure(5, label="Derivative OFF", command=derivative_on_off2)
 
 
-def intersection_on_off2(menu):
-    menu.entryconfigure(6, label="Intersection ON", command=lambda: intersection_on_off1(file_menu))
+def derivative_on_off2():
+    global DERI_ON_OFF, MERGE_SEPARATE
+    DERI_ON_OFF = 1
+    if MERGE_SEPARATE == 1:
+        merge_separate2()
+    elif MERGE_SEPARATE == 0:
+        merge_separate1()
+    file_menu.entryconfigure(5, label="Derivative ON", command=derivative_on_off1)
+
+
+def intersection_on_off1():
+    global INTER_ON_OFF
+    INTER_ON_OFF = 0
+    file_menu.entryconfigure(6, label="Intersection OFF", command=intersection_on_off2)
+
+
+def intersection_on_off2():
+    global INTER_ON_OFF
+    INTER_ON_OFF = 1
+    file_menu.entryconfigure(6, label="Intersection ON", command=intersection_on_off1)
 
 #Функція для збереження графіку у PDF форматі
 def export_to_pdf(path, filename):
@@ -504,7 +523,7 @@ def input_show():
 
 
 # Функція для кнопки меню Input.
-def input_execute(menu, ax1, ax2):
+def input_execute():
     global graphs, interface
     graphs = []
     comments = []
@@ -539,13 +558,13 @@ def input_execute(menu, ax1, ax2):
         comment.pack(fill="x")
     # Інакше - створити екземпляр Graph і додати його до глобального списку графів.
     else:
+        global MERGE_SEPARATE
         graphs.append(Graph(start, end, step, eq))
-        print(graphs[0].print())
-        try:
-            file_menu.index("Merge")
-            merge_separate2(menu, ax1, ax2)
-        except:
-            merge_separate1(menu, ax1, ax2)
+        # print(graphs[0].print())
+        if MERGE_SEPARATE == 1:
+            merge_separate2()
+        elif MERGE_SEPARATE == 0:
+            merge_separate1()
         close(interface)
 
 
@@ -674,6 +693,76 @@ For example:
     manual_label.pack(side="left", expand=1, fill="both")
 
 
+# Функція для опції меню Change.
+def edit_show():
+    global interface, graphs
+
+    close(interface)
+
+    interface = [label_start, entry_start, label_end, entry_end, label_step, entry_step, label_eq, entry_eq]
+    entries = [entry_start, entry_end, entry_step, entry_eq]
+
+    if graphs:
+        fill_entries(entries, [graphs[0].start, graphs[0].end, graphs[0].step, graphs[0].eq])
+
+    border_color.pack(side="left", expand=tk.NO, fill=tk.Y, padx=5)
+    left_frame.pack(fill=tk.Y, expand=1)
+    show(interface)
+    change_btn.pack(expand=True, fill="x")
+    interface.append(change_btn)
+    interface.append(border_color)
+    interface.append(left_frame)
+    entry_start.focus()
+
+
+# Функція для кнопки меню Change.
+def edit_execute():
+    global graphs, interface, MERGE_SEPARATE
+
+    comments = []
+
+    start = entry_start.get()
+    start, comments = input_check_range(start, comments, "the first")
+
+    end = entry_end.get()
+    end, comments = input_check_range(end, comments, "the second")
+
+    if start >= end:
+        comments.clear()
+        comments.append("first")
+        comments.append("second")
+
+    step = entry_step.get()
+    step, comments = input_check_step(step, comments, "the third")
+
+    eq = entry_eq.get()
+    eq, comments = input_check_eq(eq, comments, "the fourth")
+
+    if comments != []:
+        try:
+            del interface[interface.index(comment)]
+        except ValueError:
+            pass
+        str_comment = input_comment(comments)
+        comment.config(text=str_comment)
+        interface.append(comment)
+        comment.pack(fill="x")
+    else:
+        graphs[0] = Graph(start, end, step, eq)
+        if MERGE_SEPARATE == 0:
+            merge_separate1()
+        elif MERGE_SEPARATE == 1:
+            merge_separate2()
+        # Закрыть интерфейс.
+        close(interface)
+
+
+def fill_entries(entries, values):
+    for entry, value in zip(entries, values):
+        entry.delete(0, tk.END)
+        entry.insert(0, str(value))
+
+  
 # Ініціалізуймо головне вікно програми.
 root = tk.Tk()
 # Встановлюємо назву вікна.
@@ -694,13 +783,12 @@ menu_bar = tk.Menu(root)
 # Створюємо меню для команд програми.
 file_menu = tk.Menu(menu_bar)
 file_menu.add_command(label="Input", command=input_show)
-file_menu.add_command(label="Change")
-file_menu.add_command(label="Merge", command=lambda: merge_separate1(file_menu, ax1, ax2))
-file_menu.add_command(label="Highlight points", command=lambda: highlight_points(file_menu, ax1, ax2))
-file_menu.add_command(label="Derivative ON", command=lambda: derivative_on_off1(file_menu))
-file_menu.add_command(label="Intersection ON", command=lambda: intersection_on_off1(file_menu))
+file_menu.add_command(label="Change", command=edit_show)
+file_menu.add_command(label="Merge", command=merge_separate1)
+file_menu.add_command(label="Highlight points", command=highlight_points)
+file_menu.add_command(label="Derivative ON", command=derivative_on_off1)
+file_menu.add_command(label="Intersection ON", command=intersection_on_off1)
 file_menu.add_command(label="Export", command=export_dialog)
-file_menu.add_command(label="Share")
 
 # Створюємо порожній мануал.
 manual_menu = tk.Menu(menu_bar)
@@ -803,7 +891,17 @@ interface = []
 # Створюємо кнопку з зкругленими границями.
 input_btn = RoundedButton(left_frame, text="Input", highlightthickness=0,  width=100, height=60, radius=100,
                           btnbackground="#FFB526", btnforeground="#000000",
-                          clicked=lambda: input_execute(file_menu, ax1, ax2))
+                          clicked=input_execute)
+
+# Створюємо кнопку з зкругленими границями.
+change_btn = RoundedButton(left_frame, text="Change", highlightthickness=0,  width=100, height=60, radius=100,
+                          btnbackground="#FFB526", btnforeground="#000000",
+                          clicked=edit_execute)
+
+# Merge = 1, separate = 0
+MERGE_SEPARATE = 0
+DERI_ON_OFF = 1
+INTER_ON_OFF = 0
 
 root.protocol("WM_DELETE_WINDOW", quit_me)
 # Основний цикл вікна tkinter.
