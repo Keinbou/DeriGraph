@@ -100,6 +100,10 @@ class Graph:
         for x in x_list:
             try:
                 y = eval(self.eq)
+                dy = eval(self.deri)
+                dy = Float(dy)
+                if dy.has(oo, -oo, zoo, nan):
+                    raise TypeError
                 self.x.append(x)
             except:
                 pass
@@ -366,6 +370,7 @@ def export_to_pdf(path, filename):
     canvas.draw()
     pdf_pages.savefig(fig)
     pdf_pages.close()
+    return full_path
 
 #Функція для збереження графіку у PNG форматі
 def export_to_png(path, filename):
@@ -378,6 +383,7 @@ def export_to_png(path, filename):
 
     image = Image.open(buf)
     image.save(full_path, format="PNG")
+    return full_path
 
 
 #Функція, що відповідає за відкриття діалогу з експорту графіку
@@ -750,9 +756,9 @@ def edit_execute():
     else:
         graphs[0] = Graph(start, end, step, eq)
         if MERGE_SEPARATE == 0:
-            merge_separate1()
-        elif MERGE_SEPARATE == 1:
             merge_separate2()
+        elif MERGE_SEPARATE == 1:
+            merge_separate1()
         # Закрыть интерфейс.
         close(interface)
 
